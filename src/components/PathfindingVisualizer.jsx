@@ -601,21 +601,37 @@ const getNewGridWithToggle = (grid, row, col, wPressed) => {
 
 const getGridWithNewStart = (grid, row, col, oldStart) => {
   const newGrid = grid.slice();
-  newGrid[oldStart.row] = grid[oldStart.row].slice();
-  newGrid[oldStart.row][oldStart.col] = { ...newGrid[oldStart.row][oldStart.col], isStart: false };
   
-  newGrid[row] = grid[row].slice();
-  newGrid[row][col] = { ...newGrid[row][col], isStart: true, isWall: false, isWeight: false };
+  if (oldStart.row === row) {
+    newGrid[row] = grid[row].slice();
+    newGrid[oldStart.row][oldStart.col] = { ...newGrid[oldStart.row][oldStart.col], isStart: false };
+    newGrid[row][col] = { ...newGrid[row][col], isStart: true, isWall: false, isWeight: false };
+  } else {
+    newGrid[oldStart.row] = grid[oldStart.row].slice();
+    newGrid[oldStart.row][oldStart.col] = { ...newGrid[oldStart.row][oldStart.col], isStart: false };
+    
+    newGrid[row] = grid[row].slice();
+    newGrid[row][col] = { ...newGrid[row][col], isStart: true, isWall: false, isWeight: false };
+  }
+
   return newGrid;
 };
 
 const getGridWithNewFinish = (grid, row, col, oldFinish) => {
   const newGrid = grid.slice();
-  newGrid[oldFinish.row] = grid[oldFinish.row].slice();
-  newGrid[oldFinish.row][oldFinish.col] = { ...newGrid[oldFinish.row][oldFinish.col], isFinish: false };
   
-  newGrid[row] = grid[row].slice();
-  newGrid[row][col] = { ...newGrid[row][col], isFinish: true, isWall: false, isWeight: false };
+  if (oldFinish.row === row) {
+    newGrid[row] = grid[row].slice();
+    newGrid[oldFinish.row][oldFinish.col] = { ...newGrid[oldFinish.row][oldFinish.col], isFinish: false };
+    newGrid[row][col] = { ...newGrid[row][col], isFinish: true, isWall: false, isWeight: false };
+  } else {
+    newGrid[oldFinish.row] = grid[oldFinish.row].slice();
+    newGrid[oldFinish.row][oldFinish.col] = { ...newGrid[oldFinish.row][oldFinish.col], isFinish: false };
+    
+    newGrid[row] = grid[row].slice();
+    newGrid[row][col] = { ...newGrid[row][col], isFinish: true, isWall: false, isWeight: false };
+  }
+
   return newGrid;
 };
 
