@@ -2,6 +2,50 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Node from './Node';
 import { dijkstra, astar, aostar, greedy, bfs, dfs, getNodesInShortestPathOrder } from '../algorithms/pathfindingAlgorithms';
 import { randomMaze, weightMaze, recursiveDivisionMaze, simpleStairPattern } from '../algorithms/mazeAlgorithms';
+const ALGORITHM_INFO = {
+  dijkstra: {
+    name: "Dijkstra's Algorithm",
+    description: "Dijkstra's algorithm guarantees the shortest path. It explores all possible paths from the starting node, expanding outwards uniformly, prioritizing nodes based on the cumulative distance from the start.",
+    timeComplexity: "O(V + E log V)",
+    spaceComplexity: "O(V)",
+    isOptimal: true,
+  },
+  astar: {
+    name: "A* Search",
+    description: "A* Search is generally the best-performing pathfinding algorithm. It uses a heuristic (Manhattan distance) to guide its search towards the target, guaranteeing the shortest path while exploring fewer nodes than Dijkstra.",
+    timeComplexity: "O(E)",
+    spaceComplexity: "O(V)",
+    isOptimal: true,
+  },
+  aostar: {
+    name: "AO* Search",
+    description: "AO* Search typically solves AND/OR graphs. In this visualizer, it's implemented as a variant that heavily weights the heuristic to simulate depth-first behavior, showing a different search pattern. It does not guarantee the shortest path here.",
+    timeComplexity: "O(E)",
+    spaceComplexity: "O(V)",
+    isOptimal: false,
+  },
+  greedy: {
+    name: "Greedy Best-first Search",
+    description: "Greedy Best-first Search evaluates nodes based solely on their heuristic distance to the target. It is faster than Dijkstra and A* but does not guarantee the shortest path, as it ignores the cost of the path traversed so far.",
+    timeComplexity: "O(V^2)",
+    spaceComplexity: "O(V)",
+    isOptimal: false,
+  },
+  bfs: {
+    name: "Breadth-first Search",
+    description: "Breadth-first Search explores all neighbor nodes at the present depth before moving on to the nodes at the next depth level. It guarantees the shortest path on an unweighted grid.",
+    timeComplexity: "O(V + E)",
+    spaceComplexity: "O(V)",
+    isOptimal: true,
+  },
+  dfs: {
+    name: "Depth-first Search",
+    description: "Depth-first Search explores as far as possible along each branch before backtracking. It is a poor algorithm for pathfinding and does not guarantee the shortest path.",
+    timeComplexity: "O(V + E)",
+    spaceComplexity: "O(V)",
+    isOptimal: false,
+  }
+};
 
 const START_NODE_ROW = 10;
 const START_NODE_COL = 15;
@@ -23,7 +67,9 @@ const PathfindingVisualizer = () => {
   const [isAnimating, setIsAnimating] = useState(false);
   const [wPressed, setWPressed] = useState(false);
   const [speed, setSpeed] = useState(10); // 10ms Fast, 25ms Avg, 50ms Slow
-
+  const [pathCost, setPathCost] = useState(null);
+  const [algoCost, setAlgoCost] = useState(null);
+  const [comparisonStats, setComparisonStats] = useState(null);
   useEffect(() => {
     const initialGrid = getInitialGrid(startNodePos, finishNodePos);
     setGrid(initialGrid);
@@ -82,6 +128,9 @@ const PathfindingVisualizer = () => {
 
   const clearBoard = () => {
     if (isAnimating) return;
+    setPathCost(null);
+    setAlgoCost(null);
+    setComparisonStats(null);
     for (let row = 0; row < MAX_ROWS; row++) {
       for (let col = 0; col < MAX_COLS; col++) {
         const node = document.getElementById(`node-${row}-${col}`);
@@ -119,6 +168,9 @@ const PathfindingVisualizer = () => {
 
   const clearPath = () => {
     if (isAnimating) return;
+    setPathCost(null);
+    setAlgoCost(null);
+    setComparisonStats(null);
     for (let row = 0; row < MAX_ROWS; row++) {
       for (let col = 0; col < MAX_COLS; col++) {
         const node = document.getElementById(`node-${row}-${col}`);
@@ -174,7 +226,72 @@ const PathfindingVisualizer = () => {
     const visitedNodesInOrder = runAlgo(selectedAlgorithm, gridCopy, startNodeCopy, finishNodeCopy);
     const nodesInShortestPathOrder = getNodesInShortestPathOrder(finishNodeCopy);
 
+    let algoCurrentCost = 0;
+    for (const node of visitedNodesInOrder) {
+      algoCurrentCost += node.isWeight ? 15 : 1;
+    }
+    setAlgoCost(algoCurrentCost);
+
+    let currentCost = 0;
+    if (nodesInShortestPathOrder.length > 0) {
+      for (let i = 1; i < nodesInShortestPathOrder.length; i++) {
+        currentCost += nodesInShortestPathOrder[i].isWeight ? 15 : 1;
+      }
+      setPathCost(currentCost);
+    } else {
+      setPathCost(-1);
+    }
+
     animateAlgorithm(visitedNodesInOrder, nodesInShortestPathOrder);
+  };
+
+  const compareAllAlgorithms = () => {
+    if (isAnimating) return;
+    
+    const algorithms = ['dijkstra', 'astar', 'aostar', 'greedy', 'bfs', 'dfs'];
+    const results = [];
+    
+    algorithms.forEach(algo => {
+      const gridCopy = grid.map(row => row.map(node => ({
+        ...node, 
+        isVisited: false, 
+        distance: Infinity, 
+        f: Infinity, 
+        g: Infinity, 
+        h: Infinity, 
+        previousNode: null 
+      })));
+      const startNodeCopy = gridCopy[startNodePos.row][startNodePos.col];
+      const finishNodeCopy = gridCopy[finishNodePos.row][finishNodePos.col];
+      
+      const visitedNodesInOrder = runAlgo(algo, gridCopy, startNodeCopy, finishNodeCopy);
+      const nodesInShortestPathOrder = getNodesInShortestPathOrder(finishNodeCopy);
+      
+      let algoTime = 0;
+      for (const node of visitedNodesInOrder) {
+        algoTime += node.isWeight ? 15 : 1;
+      }
+      
+      let pTime = 0;
+      if (nodesInShortestPathOrder.length > 0 && nodesInShortestPathOrder[nodesInShortestPathOrder.length - 1] === finishNodeCopy) {
+        for (let i = 1; i < nodesInShortestPathOrder.length; i++) {
+          pTime += nodesInShortestPathOrder[i].isWeight ? 15 : 1;
+        }
+      } else {
+        pTime = -1;
+      }
+      
+      results.push({
+        id: algo,
+        name: ALGORITHM_INFO[algo].name,
+        algoTime,
+        pathTime: pTime,
+        visitedCount: visitedNodesInOrder.length
+      });
+    });
+    
+    results.sort((a, b) => a.algoTime - b.algoTime);
+    setComparisonStats(results);
   };
 
   const animateShortestPath = (nodesInShortestPathOrder) => {
@@ -308,6 +425,11 @@ const PathfindingVisualizer = () => {
             Visualize!
           </button>
           
+          <button className="btn btn-secondary" onClick={compareAllAlgorithms} disabled={isAnimating}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83M22 12A10 10 0 0 0 12 2v10z"></path></svg>
+            Compare All
+          </button>
+          
           <button className="btn" onClick={clearBoard} disabled={isAnimating}>Clear Board</button>
           <button className="btn" onClick={clearWallsAndWeights} disabled={isAnimating}>Clear Walls & Weights</button>
           <button className="btn" onClick={clearPath} disabled={isAnimating}>Clear Path</button>
@@ -334,6 +456,68 @@ const PathfindingVisualizer = () => {
         <div className="legend-item"><div className="legend-color" style={{backgroundColor: 'var(--node-shortest-path)'}}></div> Shortest-path Node</div>
         <div className="legend-item"><div className="legend-color" style={{backgroundColor: 'var(--node-wall)'}}></div> Wall Node</div>
       </div>
+
+      <div className="algorithm-info">
+        <div className="info-header">
+          <h3>{ALGORITHM_INFO[selectedAlgorithm].name}</h3>
+          <span className={`optimal-badge ${ALGORITHM_INFO[selectedAlgorithm].isOptimal ? 'optimal' : 'not-optimal'}`}>
+            {ALGORITHM_INFO[selectedAlgorithm].isOptimal ? 'Optimal' : 'Not Optimal'}
+          </span>
+        </div>
+        <p className="info-description">{ALGORITHM_INFO[selectedAlgorithm].description}</p>
+        <div className="complexity-container">
+          <div className="complexity-item">
+            <span className="complexity-label">Time Complexity:</span>
+            <span className="complexity-value">{ALGORITHM_INFO[selectedAlgorithm].timeComplexity}</span>
+          </div>
+          <div className="complexity-item">
+            <span className="complexity-label">Space Complexity:</span>
+            <span className="complexity-value">{ALGORITHM_INFO[selectedAlgorithm].spaceComplexity}</span>
+          </div>
+          {pathCost !== null && (
+            <div className="complexity-item" style={{ borderColor: 'var(--primary)', backgroundColor: 'rgba(99, 102, 241, 0.1)' }}>
+              <span className="complexity-label" style={{ color: 'var(--text)' }}>Current Path Time:</span>
+              <span className="complexity-value" style={{ fontSize: '1.1rem' }}>
+                {pathCost === -1 ? 'Not Found' : `${pathCost} units`}
+              </span>
+            </div>
+          )}
+          {algoCost !== null && (
+            <div className="complexity-item" style={{ borderColor: '#8b5cf6', backgroundColor: 'rgba(139, 92, 246, 0.1)' }}>
+              <span className="complexity-label" style={{ color: 'var(--text)' }}>Algorithm Time:</span>
+              <span className="complexity-value" style={{ fontSize: '1.1rem', color: '#c4b5fd' }}>
+                {algoCost} units
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {comparisonStats && (
+        <div className="comparison-panel">
+          <h3>Algorithm Comparison (Current Board)</h3>
+          <table className="comparison-table">
+            <thead>
+              <tr>
+                <th>Algorithm</th>
+                <th>Algorithm Time (Exploration Cost)</th>
+                <th>Path Time (Length/Cost)</th>
+                <th>Nodes Visited</th>
+              </tr>
+            </thead>
+            <tbody>
+              {comparisonStats.map((stat, idx) => (
+                <tr key={stat.id} className={idx === 0 ? 'winner-row' : ''}>
+                  <td>{stat.name} {idx === 0 && '👑'}</td>
+                  <td>{stat.algoTime} units</td>
+                  <td>{stat.pathTime === -1 ? 'Not Found' : `${stat.pathTime} units`}</td>
+                  <td>{stat.visitedCount}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       <div className="grid-container">
         <div className="grid" onMouseLeave={handleMouseUp}>
