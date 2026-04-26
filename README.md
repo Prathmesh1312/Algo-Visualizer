@@ -34,7 +34,7 @@ Make sure you have [Node.js](https://nodejs.org/en/) installed on your machine.
 
 1. **Clone or Navigate to the directory:**
    ```bash
-   cd react-visualizer
+   cd Algo-Visualizer
    ```
 
 2. **Install dependencies:**
