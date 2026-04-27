@@ -16,23 +16,7 @@ export function randomMaze(grid) {
   return wallsToAnimate;
 }
 
-export function weightMaze(grid) {
-  const weightsToAnimate = [];
-  for (let row = 0; row < grid.length; row++) {
-    for (let col = 0; col < grid[0].length; col++) {
-      if (
-        (row === grid.length / 2 && col === grid[0].length / 4) ||
-        (row === grid.length / 2 && col === (grid[0].length / 4) * 3)
-      ) {
-        continue;
-      }
-      if (Math.random() < 0.25) {
-        weightsToAnimate.push(grid[row][col]);
-      }
-    }
-  }
-  return weightsToAnimate;
-}
+
 
 export function recursiveDivisionMaze(grid, startNode, finishNode, type = 'normal') {
   const wallsToAnimate = [];

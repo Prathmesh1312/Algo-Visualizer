@@ -5,7 +5,6 @@ const Node = React.memo(({
   isFinish,
   isStart,
   isWall,
-  isWeight,
   onMouseDown,
   onMouseEnter,
   onMouseUp,
@@ -17,8 +16,6 @@ const Node = React.memo(({
     ? 'node-start'
     : isWall
     ? 'node-wall'
-    : isWeight
-    ? 'node-weight'
     : '';
 
   return (

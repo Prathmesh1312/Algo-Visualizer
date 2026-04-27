@@ -260,19 +260,7 @@ body {
 
 
 
-.node-weight {
-  background-color: var(--node-unvisited);
-  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"/></svg>');
-  background-position: center;
-  background-repeat: no-repeat;
-  animation: wallAnimation 0.3s ease-out forwards;
-}
 
-.node-visited-weight {
-  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"/></svg>');
-  background-position: center;
-  background-repeat: no-repeat;
-}
 
 .algorithm-info {
   background-color: var(--surface);

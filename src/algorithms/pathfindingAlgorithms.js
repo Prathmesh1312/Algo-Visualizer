@@ -44,8 +44,7 @@ export function astar(grid, startNode, finishNode) {
     
     const neighbors = getUnvisitedNeighbors(closestNode, grid);
     for (const neighbor of neighbors) {
-      const edgeWeight = neighbor.isWeight ? 15 : 1;
-      const tentativeGScore = closestNode.g + edgeWeight;
+      const tentativeGScore = closestNode.g + 1;
       
       if (tentativeGScore < neighbor.g) {
         neighbor.previousNode = closestNode;
@@ -87,11 +86,7 @@ export function aostar(grid, startNode, finishNode) {
     
     const neighbors = getUnvisitedNeighbors(closestNode, grid);
     for (const neighbor of neighbors) {
-      const edgeWeight = neighbor.isWeight ? 15 : 1;
-      // AO* typically focuses heavily on the heuristic and cost revision
-      // For this visualizer, we mimic A* but weight the heuristic more (like Weighted A*)
-      // to demonstrate a different search pattern.
-      const tentativeGScore = closestNode.g + edgeWeight;
+      const tentativeGScore = closestNode.g + 1;
       
       if (tentativeGScore < neighbor.g) {
         neighbor.previousNode = closestNode;
@@ -199,8 +194,7 @@ function sortNodesByDistance(unvisitedNodes) {
 function updateUnvisitedNeighbors(node, grid, algo = 'dijkstra', finishNode = null) {
   const unvisitedNeighbors = getUnvisitedNeighbors(node, grid);
   for (const neighbor of unvisitedNeighbors) {
-    const edgeWeight = neighbor.isWeight ? 15 : 1;
-    neighbor.distance = node.distance + edgeWeight;
+    neighbor.distance = node.distance + 1;
     neighbor.previousNode = node;
   }
 }

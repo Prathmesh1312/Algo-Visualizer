@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Node from './Node';
 import { dijkstra, astar, aostar, greedy, bfs, dfs, getNodesInShortestPathOrder } from '../algorithms/pathfindingAlgorithms';
-import { randomMaze, weightMaze, recursiveDivisionMaze, simpleStairPattern } from '../algorithms/mazeAlgorithms';
+import { randomMaze, recursiveDivisionMaze, simpleStairPattern } from '../algorithms/mazeAlgorithms';
 const ALGORITHM_INFO = {
   dijkstra: {
     name: "Dijkstra's Algorithm",
@@ -65,7 +65,6 @@ const PathfindingVisualizer = () => {
   
   const [selectedAlgorithm, setSelectedAlgorithm] = useState('dijkstra');
   const [isAnimating, setIsAnimating] = useState(false);
-  const [wPressed, setWPressed] = useState(false);
   const [speed, setSpeed] = useState(10); // 10ms Fast, 25ms Avg, 50ms Slow
   const [pathCost, setPathCost] = useState(null);
   const [algoCost, setAlgoCost] = useState(null);
@@ -73,20 +72,6 @@ const PathfindingVisualizer = () => {
   useEffect(() => {
     const initialGrid = getInitialGrid(startNodePos, finishNodePos);
     setGrid(initialGrid);
-
-    const handleKeyDown = (e) => {
-      if (e.key === 'w' || e.key === 'W') setWPressed(true);
-    };
-    const handleKeyUp = (e) => {
-      if (e.key === 'w' || e.key === 'W') setWPressed(false);
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
-    };
   }, []);
 
   const handleMouseDown = (row, col) => {
@@ -96,7 +81,7 @@ const PathfindingVisualizer = () => {
     } else if (row === finishNodePos.row && col === finishNodePos.col) {
       setMovingFinish(true);
     } else {
-      const newGrid = getNewGridWithToggle(grid, row, col, wPressed);
+      const newGrid = getNewGridWithToggle(grid, row, col);
       setGrid(newGrid);
     }
     setMouseIsPressed(true);
@@ -115,7 +100,7 @@ const PathfindingVisualizer = () => {
     } else {
       if ((row === startNodePos.row && col === startNodePos.col) || 
           (row === finishNodePos.row && col === finishNodePos.col)) return;
-      const newGrid = getNewGridWithToggle(grid, row, col, wPressed);
+      const newGrid = getNewGridWithToggle(grid, row, col);
       setGrid(newGrid);
     }
   };
@@ -146,19 +131,18 @@ const PathfindingVisualizer = () => {
     setGrid(getInitialGrid(startNodePos, finishNodePos));
   };
 
-  const clearWallsAndWeights = () => {
+  const clearWalls = () => {
     if (isAnimating) return;
     const newGrid = grid.map(row => 
       row.map(node => ({
         ...node,
         isWall: false,
-        isWeight: false,
       }))
     );
     for (let row = 0; row < MAX_ROWS; row++) {
       for (let col = 0; col < MAX_COLS; col++) {
         const node = document.getElementById(`node-${row}-${col}`);
-        if (node.className.includes('node-wall') || node.className.includes('node-weight')) {
+        if (node.className.includes('node-wall')) {
           node.className = 'node';
         }
       }
@@ -179,8 +163,6 @@ const PathfindingVisualizer = () => {
             node.className = 'node node-start';
           } else if (row === finishNodePos.row && col === finishNodePos.col) {
             node.className = 'node node-target';
-          } else if (grid[row][col].isWeight) {
-            node.className = 'node node-weight';
           } else {
             node.className = 'node';
           }
@@ -228,14 +210,14 @@ const PathfindingVisualizer = () => {
 
     let algoCurrentCost = 0;
     for (const node of visitedNodesInOrder) {
-      algoCurrentCost += node.isWeight ? 15 : 1;
+      algoCurrentCost += 1;
     }
     setAlgoCost(algoCurrentCost);
 
     let currentCost = 0;
     if (nodesInShortestPathOrder.length > 0) {
       for (let i = 1; i < nodesInShortestPathOrder.length; i++) {
-        currentCost += nodesInShortestPathOrder[i].isWeight ? 15 : 1;
+        currentCost += 1;
       }
       setPathCost(currentCost);
     } else {
@@ -269,13 +251,13 @@ const PathfindingVisualizer = () => {
       
       let algoTime = 0;
       for (const node of visitedNodesInOrder) {
-        algoTime += node.isWeight ? 15 : 1;
+        algoTime += 1;
       }
       
       let pTime = 0;
       if (nodesInShortestPathOrder.length > 0 && nodesInShortestPathOrder[nodesInShortestPathOrder.length - 1] === finishNodeCopy) {
         for (let i = 1; i < nodesInShortestPathOrder.length; i++) {
-          pTime += nodesInShortestPathOrder[i].isWeight ? 15 : 1;
+          pTime += 1;
         }
       } else {
         pTime = -1;
@@ -321,8 +303,7 @@ const PathfindingVisualizer = () => {
         const node = visitedNodesInOrder[i];
         if ((node.row !== startNodePos.row || node.col !== startNodePos.col) && 
             (node.row !== finishNodePos.row || node.col !== finishNodePos.col)) {
-          const extra = node.isWeight ? 'node-visited-weight' : '';
-          document.getElementById(`node-${node.row}-${node.col}`).className = `node node-visited ${extra}`;
+          document.getElementById(`node-${node.row}-${node.col}`).className = `node node-visited`;
         }
       }, speed * i);
     }
@@ -339,26 +320,7 @@ const PathfindingVisualizer = () => {
       case 'random':
         nodesToAnimate = randomMaze(gridCopy);
         break;
-      case 'weight':
-        nodesToAnimate = weightMaze(gridCopy);
-        break;
-      case 'recursive':
-        nodesToAnimate = recursiveDivisionMaze(gridCopy, startNodePos, finishNodePos, 'normal');
-        break;
-      case 'recursiveVertical':
-        nodesToAnimate = recursiveDivisionMaze(gridCopy, startNodePos, finishNodePos, 'vertical');
-        break;
-      case 'recursiveHorizontal':
-        nodesToAnimate = recursiveDivisionMaze(gridCopy, startNodePos, finishNodePos, 'horizontal');
-        break;
-      case 'stair':
-        nodesToAnimate = simpleStairPattern(gridCopy);
-        break;
-      default:
-        break;
-    }
-
-    animateMaze(nodesToAnimate, mazeType === 'weight' ? 'weight' : 'wall');
+    animateMaze(nodesToAnimate, 'wall');
   };
 
   const animateMaze = (nodesToAnimate, type) => {
@@ -373,9 +335,7 @@ const PathfindingVisualizer = () => {
         setGrid((prevGrid) => {
           const newGrid = prevGrid.slice();
           newGrid[node.row] = prevGrid[node.row].slice();
-          if (type === 'weight') {
-            newGrid[node.row][node.col] = { ...newGrid[node.row][node.col], isWeight: true };
-          } else {
+          if (type === 'wall') {
             newGrid[node.row][node.col] = { ...newGrid[node.row][node.col], isWall: true };
           }
           return newGrid;
@@ -416,7 +376,6 @@ const PathfindingVisualizer = () => {
             <option value="recursiveVertical">Recursive Division (vertical skew)</option>
             <option value="recursiveHorizontal">Recursive Division (horizontal skew)</option>
             <option value="random">Basic Random Maze</option>
-            <option value="weight">Basic Weight Maze</option>
             <option value="stair">Simple Stair Pattern</option>
           </select>
           
@@ -431,7 +390,7 @@ const PathfindingVisualizer = () => {
           </button>
           
           <button className="btn" onClick={clearBoard} disabled={isAnimating}>Clear Board</button>
-          <button className="btn" onClick={clearWallsAndWeights} disabled={isAnimating}>Clear Walls & Weights</button>
+          <button className="btn" onClick={clearWalls} disabled={isAnimating}>Clear Walls</button>
           <button className="btn" onClick={clearPath} disabled={isAnimating}>Clear Path</button>
           
           <select 
@@ -450,7 +409,6 @@ const PathfindingVisualizer = () => {
       <div className="legend">
         <div className="legend-item"><div className="legend-color node-start"></div> Start Node</div>
         <div className="legend-item"><div className="legend-color node-target"></div> Target Node</div>
-        <div className="legend-item"><div className="legend-color node-weight"></div> Weight Node</div>
         <div className="legend-item"><div className="legend-color" style={{backgroundColor: 'var(--node-unvisited)'}}></div> Unvisited Node</div>
         <div className="legend-item"><div className="legend-color" style={{backgroundColor: 'var(--node-visited)'}}></div> Visited Node</div>
         <div className="legend-item"><div className="legend-color" style={{backgroundColor: 'var(--node-shortest-path)'}}></div> Shortest-path Node</div>
@@ -524,7 +482,7 @@ const PathfindingVisualizer = () => {
           {grid.map((row, rowIdx) => (
             <div key={rowIdx} className="row">
               {row.map((node, nodeIdx) => {
-                const { row, col, isFinish, isStart, isWall, isWeight } = node;
+                const { row, col, isFinish, isStart, isWall } = node;
                 return (
                   <Node
                     key={nodeIdx}
@@ -532,7 +490,6 @@ const PathfindingVisualizer = () => {
                     isFinish={isFinish}
                     isStart={isStart}
                     isWall={isWall}
-                    isWeight={isWeight}
                     mouseIsPressed={mouseIsPressed}
                     onMouseDown={(row, col) => handleMouseDown(row, col)}
                     onMouseEnter={(row, col) => handleMouseEnter(row, col)}
@@ -570,7 +527,6 @@ const createNode = (col, row, startPos, finishPos) => {
     distance: Infinity,
     isVisited: false,
     isWall: false,
-    isWeight: false,
     previousNode: null,
     f: Infinity,
     g: Infinity,
@@ -578,24 +534,15 @@ const createNode = (col, row, startPos, finishPos) => {
   };
 };
 
-const getNewGridWithToggle = (grid, row, col, wPressed) => {
+const getNewGridWithToggle = (grid, row, col) => {
   const newGrid = grid.slice();
   newGrid[row] = grid[row].slice();
   const node = newGrid[row][col];
   
-  if (wPressed) {
-    newGrid[row][col] = {
-      ...node,
-      isWeight: !node.isWeight,
-      isWall: false,
-    };
-  } else {
-    newGrid[row][col] = {
-      ...node,
-      isWall: !node.isWall,
-      isWeight: false,
-    };
-  }
+  newGrid[row][col] = {
+    ...node,
+    isWall: !node.isWall,
+  };
   return newGrid;
 };
 
@@ -605,13 +552,13 @@ const getGridWithNewStart = (grid, row, col, oldStart) => {
   if (oldStart.row === row) {
     newGrid[row] = grid[row].slice();
     newGrid[oldStart.row][oldStart.col] = { ...newGrid[oldStart.row][oldStart.col], isStart: false };
-    newGrid[row][col] = { ...newGrid[row][col], isStart: true, isWall: false, isWeight: false };
+    newGrid[row][col] = { ...newGrid[row][col], isStart: true, isWall: false };
   } else {
     newGrid[oldStart.row] = grid[oldStart.row].slice();
     newGrid[oldStart.row][oldStart.col] = { ...newGrid[oldStart.row][oldStart.col], isStart: false };
     
     newGrid[row] = grid[row].slice();
-    newGrid[row][col] = { ...newGrid[row][col], isStart: true, isWall: false, isWeight: false };
+    newGrid[row][col] = { ...newGrid[row][col], isStart: true, isWall: false };
   }
 
   return newGrid;
@@ -623,13 +570,13 @@ const getGridWithNewFinish = (grid, row, col, oldFinish) => {
   if (oldFinish.row === row) {
     newGrid[row] = grid[row].slice();
     newGrid[oldFinish.row][oldFinish.col] = { ...newGrid[oldFinish.row][oldFinish.col], isFinish: false };
-    newGrid[row][col] = { ...newGrid[row][col], isFinish: true, isWall: false, isWeight: false };
+    newGrid[row][col] = { ...newGrid[row][col], isFinish: true, isWall: false };
   } else {
     newGrid[oldFinish.row] = grid[oldFinish.row].slice();
     newGrid[oldFinish.row][oldFinish.col] = { ...newGrid[oldFinish.row][oldFinish.col], isFinish: false };
     
     newGrid[row] = grid[row].slice();
-    newGrid[row][col] = { ...newGrid[row][col], isFinish: true, isWall: false, isWeight: false };
+    newGrid[row][col] = { ...newGrid[row][col], isFinish: true, isWall: false };
   }
 
   return newGrid;
